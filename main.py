@@ -1,12 +1,15 @@
-@app.route("/get_transcript", methods=["POST"])
-def get_transcript():
-    video_url = request.form.get('video_url')
+from flask import Flask, request, jsonify
+from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
 
-    # URL'den video ID'sini çıkarma (https://www.youtube.com/watch?v=VIDEO_ID)
-    video_id = video_url.split("v=")[-1].split("&")[0]  # URL'den video ID'sini almak
+app = Flask(__name__)
+
+@app.route("/get_transcript", methods=["GET"])
+def get_transcript():
+    # URL query parametresi üzerinden video_id alıyoruz
+    video_id = request.args.get('video_id')
 
     if not video_id:
-        return jsonify({"error": "Please provide a valid YouTube URL."}), 400
+        return jsonify({"error": "Please provide a valid video ID."}), 400
 
     try:
         # Videodan transkripti al
@@ -18,10 +21,14 @@ def get_transcript():
         return jsonify({"transcript": transcript_text})
 
     except TranscriptsDisabled:
-        return jsonify({"error": "Subtitles are disabled for this video."}), 400
+        return jsonify({"error": "Subtitles are disabled for this video."})
 
     except NoTranscriptFound:
-        return jsonify({"error": "No transcript found for this video."}), 404
+        return jsonify({"error": "No transcript found for this video."})
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)})
+
+if __name__ == "__main__":
+    app.run(debug=True, host="0.0.0.0", port=8080)
+ß
