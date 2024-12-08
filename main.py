@@ -1,5 +1,6 @@
-from flask import Flask, request, Response
+from flask import Flask, request, Response, jsonify
 from youtube_transcript_api import NoTranscriptFound, TranscriptsDisabled, YouTubeTranscriptApi
+import os
 
 app = Flask(__name__)
 
@@ -30,4 +31,6 @@ def get_transcript():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=8080, debug=True)
+    # Heroku'nun sağladığı PORT'u kullan
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=True)
