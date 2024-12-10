@@ -9,24 +9,34 @@ app = Flask(__name__)
 CORS(app)
 
 def extract_video_id(video_url):
-    """Extracts video ID from the YouTube URL."""
+    """Extracts video ID from various YouTube URL formats."""
     parsed_url = urlparse(video_url)
-    
-    # Check if the URL contains a valid 'v' parameter
-    if 'v' not in parse_qs(parsed_url.query):
-        raise ValueError("Invalid YouTube URL. Could not find video ID.")
-    
-    return parse_qs(parsed_url.query)['v'][0]
+    query_params = parse_qs(parsed_url.query)
+
+    # Klasik URL formatı: https://www.youtube.com/watch?v=VIDEO_ID
+    if 'v' in query_params:
+        return query_params['v'][0]
+
+    # Kısa URL formatı: https://youtu.be/VIDEO_ID
+    if parsed_url.netloc == 'youtu.be':
+        return parsed_url.path.lstrip('/')
+
+    # Embed URL formatı: https://www.youtube.com/embed/VIDEO_ID
+    if parsed_url.path.startswith('/embed/'):
+        return parsed_url.path.split('/embed/')[1]
+
+    raise ValueError("Invalid YouTube URL. Could not find video ID.")
 
 @app.route('/get_transcript', methods=['GET'])
 def get_transcript():
+    """Fetches the transcript of a given YouTube video URL."""
     video_url = request.args.get('video_url')
-    
+
     if not video_url:
         return jsonify({"error": "Video URL is required"}), 400
 
     try:
-        # Extract video ID from URL
+        # Extract video ID from the URL
         video_id = extract_video_id(video_url)
         
         # Fetch the transcript using the YouTube Transcript API
