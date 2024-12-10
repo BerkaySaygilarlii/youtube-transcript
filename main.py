@@ -1,30 +1,35 @@
+import os
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # CORS desteği için
-import re
+from flask_cors import CORS
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import TextFormatter
 
 app = Flask(__name__)
-CORS(app)  # Tüm kaynaklardan gelen isteklere izin verir
+CORS(app)
 
-# YouTube video URL'lerinden video_id'yi çıkarmak için regex deseni
-YOUTUBE_REGEX = re.compile(
-    r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
-)
-
-def extract_video_id(url):
-    match = YOUTUBE_REGEX.search(url)
-    return match.group(1) if match else None
-
-@app.route('/get_video_id', methods=['GET'])
-def get_video_id():
-    video_url = request.args.get('video_url')
+@app.route('/get_transcript', methods=['GET'])
+def get_transcript():
+    # Video ID'sini URL'den al
+    video_url = request.args.get('video_url')  # video_url parametresini alıyoruz
     
-    if video_url:
-        video_id = extract_video_id(video_url)
-        if video_id:
-            return jsonify({"video_id": video_id})
-        return jsonify({"error": "Invalid video URL."}), 400
-
-    return jsonify({"error": "No video_url provided."}), 400
+    if not video_url:
+        return jsonify({"error": "Video URL is required"}), 400
+    
+    # URL'den video ID'sini çıkar
+    video_id = video_url.split("v=")[-1].split("&")[0]
+    
+    try:
+        # Transcript'i al
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        
+        # Transkripti formatla (isteğe bağlı)
+        formatter = TextFormatter()
+        formatted_transcript = formatter.format_transcript(transcript)
+        
+        return jsonify({"transcript": formatted_transcript}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))  # Heroku port
+    app.run(host="0.0.0.0", port=port, debug=True)
