@@ -1,34 +1,30 @@
 from flask import Flask, request, jsonify
-from youtube_transcript_api import YouTubeTranscriptApi, TranscriptsDisabled, NoTranscriptFound
+from flask_cors import CORS  # CORS desteği için
+import re
 
 app = Flask(__name__)
+CORS(app)  # Tüm kaynaklardan gelen isteklere izin verir
 
-@app.route("/get_transcript", methods=["GET"])
-def get_transcript():
-    # URL query parametresi üzerinden video_id alıyoruz
-    video_id = request.args.get('video_id')
+# YouTube video URL'lerinden video_id'yi çıkarmak için regex deseni
+YOUTUBE_REGEX = re.compile(
+    r"(?:v=|\/)([0-9A-Za-z_-]{11}).*"
+)
 
-    if not video_id:
-        return jsonify({"error": "Please provide a valid video ID."}), 400
+def extract_video_id(url):
+    match = YOUTUBE_REGEX.search(url)
+    return match.group(1) if match else None
 
-    try:
-        # Videodan transkripti al
-        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+@app.route('/get_video_id', methods=['GET'])
+def get_video_id():
+    video_url = request.args.get('video_url')
+    
+    if video_url:
+        video_id = extract_video_id(video_url)
+        if video_id:
+            return jsonify({"video_id": video_id})
+        return jsonify({"error": "Invalid video URL."}), 400
 
-        # Her text'i satırlara ayırarak döndür
-        transcript_text = "\n".join([entry['text'] for entry in transcript])
+    return jsonify({"error": "No video_url provided."}), 400
 
-        return jsonify({"transcript": transcript_text})
-
-    except TranscriptsDisabled:
-        return jsonify({"error": "Subtitles are disabled for this video."})
-
-    except NoTranscriptFound:
-        return jsonify({"error": "No transcript found for this video."})
-
-    except Exception as e:
-        return jsonify({"error": str(e)})
-
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=8080)
-ß
+if __name__ == '__main__':
+    app.run(debug=True)
