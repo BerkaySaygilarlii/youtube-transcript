@@ -27,7 +27,7 @@ def extract_video_id(video_url):
 
     raise ValueError("Invalid YouTube URL. Could not find video ID.")
 
-@app.route('/get_transcript', methods=['GET'])
+@app.route('/', methods=['GET'])
 def get_transcript():
     """Fetches the transcript of a given YouTube video URL."""
     video_url = request.args.get('video_url')
