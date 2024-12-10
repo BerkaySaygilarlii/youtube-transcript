@@ -6,7 +6,7 @@ from youtube_transcript_api.formatters import TextFormatter
 from urllib.parse import urlparse, parse_qs
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 def extract_video_id(video_url):
     """Extracts video ID from various YouTube URL formats."""
