@@ -19,7 +19,7 @@ def process_transcript(video_id):
     full_text = ' '.join([entry['text'] for entry in transcript])
     return full_text
 
-@app.route('/get_transcript', methods=['POST'])
+@app.route('/get_transcript', methods=['GET'])
 def get_transcript():
     """Fetches the transcript of a given YouTube video URL."""
     youtube_url = request.json.get('url')
